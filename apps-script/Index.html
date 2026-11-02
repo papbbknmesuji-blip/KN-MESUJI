@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Digital Register Barang Bukti - Seksi PAPBB Kejaksaan Negeri Mesuji</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- QRCode.js CDN untuk Barcode Nyata -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+      .sticker-border {
+        border: 3px solid #000000 !important;
+      }
+    }
+    @media screen {
+      .print-only {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- ========================================================================= -->
+  <!-- HEADER APLIKASI (KOP RESMI KEJAKSAAN NEGERI MESUJI)                       -->
+  <!-- ========================================================================= -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 shadow-md no-print sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 border-b border-slate-800/80">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-md p-1.5 flex items-center justify-center flex-shrink-0">
+            <!-- Logo Kejaksaan RI SVG -->
+            <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="46" fill="#14532D" stroke="#EAB308" stroke-width="4"/>
+              <circle cx="50" cy="50" r="38" fill="#15803D" stroke="#CA8A04" stroke-width="1.5"/>
+              <path d="M50 20 L58 44 L84 44 L63 59 L71 83 L50 68 L29 83 L37 59 L16 44 L42 44 Z" fill="#EAB308"/>
+              <circle cx="50" cy="50" r="14" fill="#047857" stroke="#FEF08A" stroke-width="1.5"/>
+              <path d="M50 38 L50 62 M40 50 L60 50" stroke="#FEF08A" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M42 56 L38 60 L46 60 Z M58 56 L54 60 L62 60 Z" fill="#FEF08A"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
+                Kejaksaan Negeri Mesuji
+              </span>
+              <span class="text-xs text-slate-400 font-mono">Kejati Lampung • Apps Script</span>
+            </div>
+            <h1 class="text-lg sm:text-xl font-extrabold text-slate-100 tracking-tight leading-snug">
+              Sistem Digital Register Barang Bukti
+            </h1>
+            <p class="text-xs text-slate-400">
+              Seksi Pemulihan Aset dan Pengelolaan Barang Bukti (PAPBB)
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <div id="gasStatusBadge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/70 border border-emerald-700/60 text-emerald-300 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="gasStatusText">Google Sheets Connected</span>
+          </div>
+
+          <button onclick="openRegisterModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition">
+            <i class="fa-solid fa-circle-plus"></i>
+            <span>+ Input Register Baru</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="flex space-x-1 sm:space-x-4 pt-2">
+        <button id="tabBtnRegister" onclick="switchTab('register')" class="px-3.5 py-2 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2">
+          <i class="fa-solid fa-book"></i>
+          <span>Daftar Register Perkara</span>
+          <span id="badgeTotalRecords" class="bg-emerald-900/60 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-full font-mono">0</span>
+        </button>
+        <button id="tabBtnWarehouse" onclick="switchTab('warehouse')" class="px-3.5 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-warehouse"></i>
+          <span>Manajemen Gudang BB</span>
+        </button>
+        <button id="tabBtnRecovery" onclick="switchTab('recovery')" class="px-3.5 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-coins"></i>
+          <span>Pemulihan Aset &amp; PNBP</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN CONTAINER                                                            -->
+  <!-- ========================================================================= -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 no-print">
+
+    <!-- STATS OVERVIEW CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Register</div>
+          <div id="statTotalPerkara" class="text-xl font-black text-slate-900 font-mono">0</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-boxes-stacked"></i>
+        </div>
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Barang Bukti</div>
+          <div id="statTotalBB" class="text-xl font-black text-slate-900 font-mono">0</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-gavel"></i>
+        </div>
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Perkara Inkracht</div>
+          <div id="statTotalInkracht" class="text-xl font-black text-emerald-700 font-mono">0</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rampasan Lelang</div>
+          <div id="statTotalDirampas" class="text-xl font-black text-purple-700 font-mono">0</div>
+        </div>
+      </div>
+
+      <div class="col-span-2 lg:col-span-1 bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-money-bill-transfer"></i>
+        </div>
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Setoran PNBP</div>
+          <div id="statTotalPnbp" class="text-base font-black text-slate-900 font-mono">Rp 0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: DAFTAR REGISTER PERKARA -->
+    <div id="tabContentRegister" class="space-y-4">
+      
+      <!-- Filter Bar -->
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="md:col-span-2 relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+            <input 
+              type="text" 
+              id="searchKeyword" 
+              placeholder="Cari Tersangka, No. Register BB, No. Perkara, atau Pasal..."
+              oninput="renderRegisterTable()"
+              class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            >
+          </div>
+
+          <div>
+            <select id="filterStatusPerkara" onchange="renderRegisterTable()" class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <option value="ALL">Semua Status Perkara</option>
+              <option value="TAHAP_PENUNTUTAN">Tahap Penuntutan (Tahap II)</option>
+              <option value="PERSIDANGAN">Proses Persidangan</option>
+              <option value="INKRACHT">Inkracht (Semua)</option>
+              <option value="INKRACHT_DIRAMPAS_NEGARA">Inkracht - Dirampas Negara</option>
+              <option value="INKRACHT_DIKEMBALIKAN">Inkracht - Dikembalikan</option>
+              <option value="INKRACHT_DIMUSNAHKAN">Inkracht - Dimusnahkan</option>
+            </select>
+          </div>
+
+          <div>
+            <select id="filterBulan" onchange="renderRegisterTable()" class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <option value="ALL">Semua Bulan Penerimaan</option>
+              <option value="01">Januari</option>
+              <option value="02">Februari</option>
+              <option value="03">Maret</option>
+              <option value="04">April</option>
+              <option value="05">Mei</option>
+              <option value="06">Juni</option>
+              <option value="07">Juli</option>
+              <option value="08">Agustus</option>
+              <option value="09">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900 text-white font-bold uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="py-3 px-3 w-10 text-center">No</th>
+                <th class="py-3 px-4">No. Register BB (RB) &amp; Perkara</th>
+                <th class="py-3 px-4">Tersangka &amp; Pasal</th>
+                <th class="py-3 px-4">Status Penanganan Perkara &amp; Putusan</th>
+                <th class="py-3 px-4 text-center">Barang Bukti</th>
+                <th class="py-3 px-4 text-center w-48">Aksi &amp; Dokumen</th>
+              </tr>
+            </thead>
+            <tbody id="registerTableBody" class="divide-y divide-slate-200">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: MANAJEMEN GUDANG BB -->
+    <div id="tabContentWarehouse" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Manajemen Gudang Fisik &amp; Lokasi Penyimpanan</h2>
+          <p class="text-xs text-slate-500">Filter posisi penyimpanan barang bukti fisik di lingkungan Kejaksaan Negeri Mesuji</p>
+        </div>
+        <select id="warehouseLocationFilter" onchange="renderWarehouseTable()" class="py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold">
+          <option value="ALL">Semua Lokasi Fisik</option>
+          <option value="Gudang BB">Gudang BB</option>
+          <option value="Box dalam Brankas BB">Box dalam Brankas BB</option>
+          <option value="Ruang Brankas BB">Ruang Brankas BB</option>
+          <option value="Kantor Kejari Mesuji">Kantor Kejari Mesuji</option>
+          <option value="Rupbasan">Rupbasan</option>
+        </select>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-900 text-white font-bold uppercase text-[11px]">
+            <tr>
+              <th class="py-3 px-3 text-center">No</th>
+              <th class="py-3 px-4">Nama Barang Bukti &amp; Jenis</th>
+              <th class="py-3 px-4">Lokasi Fisik</th>
+              <th class="py-3 px-4">No. Register BB</th>
+              <th class="py-3 px-4">Tersangka</th>
+              <th class="py-3 px-4">Status Pemulihan Aset</th>
+              <th class="py-3 px-4 text-center">Cetak Label</th>
+            </tr>
+          </thead>
+          <tbody id="warehouseTableBody" class="divide-y divide-slate-200">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: PEMULIHAN ASET & PNBP -->
+    <div id="tabContentRecovery" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200">
+        <h2 class="text-sm font-bold text-slate-900">Dashboard Pemulihan Aset &amp; Realisasi PNBP Kas Negara</h2>
+        <p class="text-xs text-slate-500">Rekapitulasi eksekusi barang rampasan negara yang telah disetorkan ke Kas Negara</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-900 text-white font-bold uppercase text-[11px]">
+            <tr>
+              <th class="py-3 px-3 text-center">No</th>
+              <th class="py-3 px-4">No. Register BB</th>
+              <th class="py-3 px-4">Nama Tersangka</th>
+              <th class="py-3 px-4">Barang Bukti &amp; Jenis</th>
+              <th class="py-3 px-4">Status Pemulihan</th>
+              <th class="py-3 px-4">Nominal PNBP</th>
+              <th class="py-3 px-4">Amar Putusan Pengadilan</th>
+            </tr>
+          </thead>
+          <tbody id="recoveryTableBody" class="divide-y divide-slate-200">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: CETAK 1 STIKER UNTUK SELURUH BB (DENGAN STATUS PERKARA & PUTUSAN)  -->
+  <!-- ========================================================================= -->
+  <div id="modalStickerLabel" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <!-- Modal Header (No Print) -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between no-print border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-tag text-emerald-400 text-lg"></i>
+          <div>
+            <h3 class="text-base font-bold">Stiker Label Identitas Barang Bukti (1 Stiker Seluruh BB)</h3>
+            <p class="text-xs text-slate-400">Mencantumkan Status Perkara, Putusan, dan QR Barcode yang dapat di-scan</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="showScanPreviewFromCurrentLabel()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold border border-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>Pratinjau Hasil Scan</span>
+          </button>
+          <button onclick="window.print()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-print"></i>
+            <span>Cetak Stiker</span>
+          </button>
+          <button onclick="closeStickerModal()" class="text-slate-400 hover:text-white p-1.5">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Area 1 Stiker Seluruh BB -->
+      <div class="p-6 overflow-y-auto space-y-4">
+        <div id="stickerPrintContainer" class="border-4 border-slate-900 rounded-xl p-6 bg-white relative sticker-border">
+          <!-- Dynamic Content rendered by renderStickerModal() -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: PRATINJAU HASIL SCAN BARCODE                                       -->
+  <!-- ========================================================================= -->
+  <div id="modalScanPreview" class="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-xs hidden items-center justify-center p-4 no-print">
+    <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl border border-slate-300 overflow-hidden">
+      <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-qrcode text-emerald-400"></i>
+          <h3 class="font-bold text-sm">Pratinjau Hasil Scan Barcode</h3>
+        </div>
+        <button onclick="closeScanPreview()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3">
+        <p class="text-xs text-slate-600">Data teks persis yang terbaca saat QR Code dipindai dengan kamera ponsel atau scanner 2D:</p>
+        <pre id="scanPreviewText" class="bg-slate-900 text-emerald-300 font-mono text-xs p-4 rounded-lg overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-60"></pre>
+      </div>
+      <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-between">
+        <button onclick="copyScanText()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-copy"></i>
+          <span id="btnCopyText">Salin Teks</span>
+        </button>
+        <button onclick="closeScanPreview()" class="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: FORM INPUT / EDIT REGISTER PERKARA                                 -->
+  <!-- ========================================================================= -->
+  <div id="modalRegisterForm" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-6 overflow-y-auto no-print">
+    <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl border border-slate-300 overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
+        <h3 id="formModalTitle" class="text-sm sm:text-base font-bold flex items-center gap-2">
+          <i class="fa-solid fa-file-pen text-emerald-400"></i>
+          <span>Input Register Perkara &amp; Barang Bukti Baru</span>
+        </h3>
+        <button onclick="closeRegisterFormModal()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="registerForm" onsubmit="saveRegisterSubmit(event)" class="p-6 overflow-y-auto space-y-4 text-xs">
+        <input type="hidden" id="formRegId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Kode Perkara</label>
+            <input type="text" id="formKodePerkara" required value="EOH" class="w-full p-2 border border-slate-300 rounded-lg font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">No. Register Perkara</label>
+            <input type="text" id="formNoPerkara" required placeholder="PDM-26/MSJ/05/2026" class="w-full p-2 border border-slate-300 rounded-lg font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">No. Register BB (RB)</label>
+            <input type="text" id="formNoRb" required placeholder="RB-24/MSJ/05/2026" class="w-full p-2 border border-slate-300 rounded-lg font-mono font-bold text-emerald-800">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Surat Perintah Penerimaan</label>
+            <input type="text" id="formSuratPerintah" required placeholder="PRINT-443/L.8.22/Eoh.2/05/2026" class="w-full p-2 border border-slate-300 rounded-lg font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Tanggal Penerimaan</label>
+            <input type="date" id="formTanggalTerima" required class="w-full p-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nama Tersangka</label>
+            <input type="text" id="formNamaTersangka" required placeholder="JUNI ROMADHON alias DONI bin SARJITO" class="w-full p-2 border border-slate-300 rounded-lg uppercase font-semibold">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Pasal / Dakwaan</label>
+            <input type="text" id="formPasal" required placeholder="KUHP TAHUN 2023 Pasal 476" class="w-full p-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Jaksa Penuntut Umum (pisahkan dengan ;)</label>
+            <input type="text" id="formJaksaPu" required placeholder="REGHA PRAWIRA UTAMA, S.H.; ALVIN DWI NANDA, S.H." class="w-full p-2 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Penyidik Asal</label>
+            <input type="text" id="formPenyidik" required value="Sat Reskrim Polres Mesuji" class="w-full p-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+
+        <!-- Section Status Perkara & Putusan -->
+        <div class="p-3 bg-slate-50 border border-slate-300 rounded-xl space-y-3">
+          <div class="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-scale-balanced text-emerald-700"></i>
+            <span>Status Penanganan Perkara &amp; Putusan</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Status Penanganan Perkara</label>
+              <select id="formStatusPerkara" class="w-full p-2 border border-slate-300 rounded-lg font-bold">
+                <option value="TAHAP_PENUNTUTAN">Tahap Penuntutan (Tahap II)</option>
+                <option value="PERSIDANGAN">Proses Persidangan</option>
+                <option value="INKRACHT">Inkracht</option>
+                <option value="INKRACHT_DIRAMPAS_NEGARA">Inkracht - Dirampas untuk Negara</option>
+                <option value="INKRACHT_DIKEMBALIKAN">Inkracht - Dikembalikan</option>
+                <option value="INKRACHT_DIMUSNAHKAN">Inkracht - Dimusnahkan</option>
+                <option value="PENITIPAN_RUPBASAN">Penitipan RUPBASAN</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Tanggal Putusan Pengadilan (Opsional)</label>
+              <input type="date" id="formTanggalPutusan" class="w-full p-2 border border-slate-300 rounded-lg">
+            </div>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Isi / Amar Putusan Pengadilan (Jika ada)</label>
+            <textarea id="formAmarPutusan" rows="2" placeholder="Putusan PN Menggala No. ... Tanggal ... Amar: Menyatakan barang bukti dirampas untuk negara..." class="w-full p-2 border border-slate-300 rounded-lg italic"></textarea>
+          </div>
+        </div>
+
+        <!-- Section Barang Bukti Repeater -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="font-bold text-slate-900 text-xs uppercase flex items-center gap-1.5">
+              <i class="fa-solid fa-boxes-stacked text-emerald-700"></i>
+              <span>Daftar Barang Bukti Fisik</span>
+            </div>
+            <button type="button" onclick="addEvidenceItemFormRow()" class="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded border border-emerald-300 hover:bg-emerald-100">
+              + Tambah Item BB
+            </button>
+          </div>
+
+          <div id="evidenceItemsContainer" class="space-y-2.5">
+            <!-- Dynamic rows -->
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeRegisterFormModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-sm">
+            Simpan Data Register
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT LOGIC & GAS SYNC                                               -->
+  <!-- ========================================================================= -->
+  <script>
+    // State Aplikasi
+    let registers = [];
+    let currentActiveTab = 'register';
+    let currentViewingRegister = null;
+
+    // Sample data fallback jika belum ada data di Google Sheets
+    const DEFAULT_SAMPLE_REGISTERS = [
+      {
+        id: 'reg-001',
+        kodePerkara: 'EOH',
+        registerPerkara: 'PDM-26/MSJ/05/2026',
+        registerBarangBukti: 'RB-24/MSJ/05/2026',
+        suratPenerimaan: 'PRINT-443/L.8.22/Eoh.2/05/2026',
+        tanggalPenerimaan: '2026-05-21',
+        bulan: '05',
+        tahun: '2026',
+        penyidikAsal: 'Sat Reskrim Polres Mesuji',
+        jaksaPU: ['REGHA PRAWIRA UTAMA, S.H.', 'ALVIN DWI NANDA, S.H.'],
+        namaTersangka: 'JUNI ROMADHON alias DONI bin SARJITO',
+        pasal: 'KUHP TAHUN 2023 Pasal 476',
+        statusPerkara: 'TAHAP_PENUNTUTAN',
+        statusPemulihanAset: 'TAHAP_SITA',
+        amarPutusan: '',
+        tanggalPutusan: '',
+        barangBuktiList: [
+          {
+            id: 'bb-001',
+            namaBarang: 'Sepeda Motor Honda CB150R',
+            jenisBarang: 'KENDARAAN',
+            jumlah: 1,
+            satuan: 'Unit',
+            spesifikasi: 'Warna Merah putih, Noka:MH1KC911XGK040722, Nosin:KC91E1037584, Nopol:T 5441 YM',
+            kondisi: 'BAIK',
+            statusPemulihanAset: 'TAHAP_SITA',
+            lokasiPenyimpanan: 'Gudang BB',
+            nominalPnbp: 0
+          },
+          {
+            id: 'bb-002',
+            namaBarang: 'STNK Motor Honda CB150R',
+            jenisBarang: 'DOKUMEN',
+            jumlah: 1,
+            satuan: 'Lembar',
+            spesifikasi: 'An. JUNI ROMADHON, Nopol: T 5441 YM',
+            kondisi: 'BAIK',
+            statusPemulihanAset: 'TAHAP_SITA',
+            lokasiPenyimpanan: 'Box dalam Brankas BB',
+            nominalPnbp: 0
+          }
+        ]
+      },
+      {
+        id: 'reg-002',
+        kodePerkara: 'PIDSUS',
+        registerPerkara: 'PDS-08/MSJ/03/2026',
+        registerBarangBukti: 'RB-12/MSJ/03/2026',
+        suratPenerimaan: 'PRINT-128/L.8.22/Fd.1/03/2026',
+        tanggalPenerimaan: '2026-03-14',
+        bulan: '03',
+        tahun: '2026',
+        penyidikAsal: 'Tim Penyidik Pidsus Kejaksaan Negeri Mesuji',
+        jaksaPU: ['REGHA PRAWIRA UTAMA, S.H.', 'ANA ALSAN MUHAMMAD, S.H.'],
+        namaTersangka: 'IRWAN SUGIANTO, S.Sos. (Mantan Kades)',
+        pasal: 'UU Tipikor No. 31/1999 jo UU No. 20/2001 Pasal 2 ayat (1) jo Pasal 18',
+        statusPerkara: 'INKRACHT_DIRAMPAS_NEGARA',
+        statusPemulihanAset: 'DIRAMPAS_LELANG',
+        amarPutusan: 'Putusan PN Tanjungkarang No. 12/Pid.Sus-TPK/2026: Barang bukti 1 unit Mobil Toyota Hilux dan uang sitaan dirampas untuk negara c.q. disetorkan ke Kas Negara sebagai uang pengganti dan PNBP Kejaksaan.',
+        tanggalPutusan: '2026-06-10',
+        barangBuktiList: [
+          {
+            id: 'bb-003',
+            namaBarang: 'Mobil Toyota Hilux Double Cabin 2.4G',
+            jenisBarang: 'KENDARAAN',
+            jumlah: 1,
+            satuan: 'Unit',
+            spesifikasi: 'Tahun 2021, Noka:MHFAB3CD4M12389, Nosin:2GD-FTV45678, Nopol:BE 8812 MS',
+            kondisi: 'BAIK',
+            statusPemulihanAset: 'DIRAMPAS_LELANG',
+            lokasiPenyimpanan: 'Gudang BB',
+            nominalPnbp: 293500000
+          }
+        ]
+      }
+    ];
+
+    // Inisialisasi saat halaman selesai dimuat
+    window.addEventListener('DOMContentLoaded', () => {
+      loadInitialData();
+    });
+
+    /**
+     * Memuat data: Mencoba Google Apps Script terlebih dahulu, jika offline gunakan localStorage
+     */
+    function loadInitialData() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        document.getElementById('gasStatusText').innerText = 'Mengambil Data Sheets...';
+        google.script.run
+          .withSuccessHandler((serverData) => {
+            if (serverData && serverData.length > 0) {
+              registers = serverData;
+            } else {
+              registers = DEFAULT_SAMPLE_REGISTERS;
+            }
+            document.getElementById('gasStatusText').innerText = 'Google Sheets Aktif (' + registers.length + ' Perkara)';
+            updateAllViews();
+          })
+          .withFailureHandler((err) => {
+            console.warn('Gagal memuat data dari Apps Script, menggunakan cache lokal:', err);
+            loadFromLocalStorage();
+          })
+          .getRegisters();
+      } else {
+        // Mode Standalone / Testing
+        document.getElementById('gasStatusBadge').classList.remove('hidden');
+        document.getElementById('gasStatusText').innerText = 'Mode Lokal / Demo Browser';
+        loadFromLocalStorage();
+      }
+    }
+
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem('papbb_registers_gas');
+      if (saved) {
+        try {
+          registers = JSON.parse(saved);
+        } catch (e) {
+          registers = DEFAULT_SAMPLE_REGISTERS;
+        }
+      } else {
+        registers = DEFAULT_SAMPLE_REGISTERS;
+        saveToLocalStorage();
+      }
+      updateAllViews();
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('papbb_registers_gas', JSON.stringify(registers));
+    }
+
+    function updateAllViews() {
+      renderRegisterTable();
+      renderWarehouseTable();
+      renderRecoveryTable();
+      updateStats();
+    }
+
+    function formatRupiah(num) {
+      return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+    }
+
+    function formatDateIndo(dateStr) {
+      if (!dateStr) return '-';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        return parts[2] + ' ' + (bulanNames[parseInt(parts[1], 10)] || parts[1]) + ' ' + parts[0];
+      }
+      return dateStr;
+    }
+
+    function getStatusPerkaraLabel(status) {
+      switch (status) {
+        case 'TAHAP_PENUNTUTAN': return 'Tahap Penuntutan (Tahap II)';
+        case 'PERSIDANGAN': return 'Proses Persidangan';
+        case 'INKRACHT': return 'Inkracht';
+        case 'INKRACHT_DIRAMPAS_NEGARA': return 'Inkracht - Dirampas untuk Negara';
+        case 'INKRACHT_DIKEMBALIKAN': return 'Inkracht - Dikembalikan';
+        case 'INKRACHT_DIMUSNAHKAN': return 'Inkracht - Dimusnahkan';
+        case 'PENITIPAN_RUPBASAN': return 'Penitipan RUPBASAN';
+        default: return (status || '-').replace(/_/g, ' ');
+      }
+    }
+
+    function getStatusPemulihanLabel(status) {
+      switch (status) {
+        case 'DIRAMPAS_LELANG': case 'PROSES_LELANG': return 'Dirampas Lelang';
+        case 'TERJUAL_LELANG': return 'Terjual Lelang';
+        case 'DIKEMBALIKAN': return 'Dikembalikan';
+        case 'DIMUSNAHKAN': return 'Dimusnahkan';
+        case 'DISETOR_KAS_NEGARA': case 'DISETOR_PNBP': return 'Disetor Kas Negara';
+        case 'TAHAP_SITA': default: return 'Tahap Sita';
+      }
+    }
+
+    /**
+     * Hitung ringkasan statistik
+     */
+    function updateStats() {
+      document.getElementById('statTotalPerkara').innerText = registers.length;
+      document.getElementById('badgeTotalRecords').innerText = registers.length;
+
+      let totalBB = 0;
+      let inkracht = 0;
+      let dirampas = 0;
+      let totalPnbp = 0;
+
+      registers.forEach(r => {
+        if (r.statusPerkara && r.statusPerkara.includes('INKRACHT')) inkracht++;
+        (r.barangBuktiList || []).forEach(b => {
+          totalBB++;
+          if (b.statusPemulihanAset === 'DIRAMPAS_LELANG' || b.statusPemulihanAset === 'PROSES_LELANG') dirampas++;
+          totalPnbp += (Number(b.nominalPnbp) || 0);
+        });
+      });
+
+      document.getElementById('statTotalBB').innerText = totalBB;
+      document.getElementById('statTotalInkracht').innerText = inkracht;
+      document.getElementById('statTotalDirampas').innerText = dirampas;
+      document.getElementById('statTotalPnbp').innerText = formatRupiah(totalPnbp);
+    }
+
+    /**
+     * Render Tabel Register Utama
+     */
+    function renderRegisterTable() {
+      const tbody = document.getElementById('registerTableBody');
+      const keyword = (document.getElementById('searchKeyword').value || '').toLowerCase();
+      const statusFilter = document.getElementById('filterStatusPerkara').value;
+      const bulanFilter = document.getElementById('filterBulan').value;
+
+      const filtered = registers.filter(r => {
+        const matchesKeyword = !keyword || 
+          r.namaTersangka.toLowerCase().includes(keyword) ||
+          r.registerBarangBukti.toLowerCase().includes(keyword) ||
+          r.registerPerkara.toLowerCase().includes(keyword) ||
+          r.pasal.toLowerCase().includes(keyword);
+
+        const matchesStatus = statusFilter === 'ALL' || 
+          r.statusPerkara === statusFilter || 
+          (statusFilter === 'INKRACHT' && r.statusPerkara.startsWith('INKRACHT'));
+
+        const bulan = r.bulan || (r.tanggalPenerimaan ? r.tanggalPenerimaan.split('-')[1] : '');
+        const matchesBulan = bulanFilter === 'ALL' || bulan === bulanFilter;
+
+        return matchesKeyword && matchesStatus && matchesBulan;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 font-semibold">Tidak ada register perkara yang cocok dengan pencarian.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((r, idx) => {
+        const totalItems = (r.barangBuktiList || []).length;
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-200">
+            <td class="py-3 px-3 text-center font-bold text-slate-700 align-top">${idx + 1}</td>
+            <td class="py-3 px-4 align-top">
+              <div class="font-mono font-bold text-emerald-800 text-xs">${r.registerBarangBukti}</div>
+              <div class="font-mono text-slate-600 text-[11px]">${r.registerPerkara}</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Tgl Terima: ${formatDateIndo(r.tanggalPenerimaan)}</div>
+            </td>
+            <td class="py-3 px-4 align-top">
+              <div class="font-black text-slate-900 uppercase">${r.namaTersangka}</div>
+              <div class="text-slate-600 text-[11px] mt-0.5">${r.pasal}</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">JPU: ${Array.isArray(r.jaksaPU) ? r.jaksaPU.join('; ') : r.jaksaPU}</div>
+            </td>
+            <td class="py-3 px-4 align-top">
+              <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                r.statusPerkara.includes('INKRACHT') ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+              }">
+                ${getStatusPerkaraLabel(r.statusPerkara)}
+              </span>
+              ${r.amarPutusan ? `<div class="text-[10px] italic text-slate-700 font-serif mt-1 max-w-xs line-clamp-2">"${r.amarPutusan}"</div>` : ''}
+            </td>
+            <td class="py-3 px-4 text-center align-top">
+              <span class="inline-block px-2 py-1 rounded-full bg-slate-100 text-slate-800 font-bold font-mono text-xs">
+                ${totalItems} Item
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center align-top space-x-1">
+              <button onclick="openStickerModal('${r.id}')" title="Cetak 1 Stiker Label Seluruh BB" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300 transition">
+                <i class="fa-solid fa-tag"></i> Stiker BB
+              </button>
+              <button onclick="openEditRegisterModal('${r.id}')" title="Edit Data Register" class="px-2 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200 text-xs">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button onclick="deleteRegisterAction('${r.id}')" title="Hapus Register" class="px-2 py-1.5 rounded-lg text-rose-600 hover:text-rose-900 hover:bg-rose-50 text-xs">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Render Gudang Fisik
+     */
+    function renderWarehouseTable() {
+      const tbody = document.getElementById('warehouseTableBody');
+      const locFilter = document.getElementById('warehouseLocationFilter').value;
+
+      let allItems = [];
+      registers.forEach(r => {
+        (r.barangBuktiList || []).forEach(b => {
+          allItems.push({ ...b, register: r });
+        });
+      });
+
+      if (locFilter !== 'ALL') {
+        allItems = allItems.filter(i => (i.lokasiPenyimpanan || '').toLowerCase().includes(locFilter.toLowerCase()));
+      }
+
+      tbody.innerHTML = allItems.map((item, idx) => `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-200">
+          <td class="py-3 px-3 text-center font-bold text-slate-600">${idx + 1}</td>
+          <td class="py-3 px-4">
+            <div class="font-bold text-slate-900">${item.namaBarang}</div>
+            <div class="text-[10px] text-slate-500 font-mono">Jenis: ${item.jenisBarang}</div>
+          </td>
+          <td class="py-3 px-4 font-semibold text-emerald-800">
+            <i class="fa-solid fa-location-dot mr-1 text-emerald-600"></i> ${item.lokasiPenyimpanan}
+          </td>
+          <td class="py-3 px-4 font-mono font-bold text-slate-800">${item.register.registerBarangBukti}</td>
+          <td class="py-3 px-4 uppercase font-semibold text-slate-900">${item.register.namaTersangka}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 border border-slate-300">
+              ${getStatusPemulihanLabel(item.statusPemulihanAset)}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <button onclick="openStickerModal('${item.register.id}')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-xs font-semibold">
+              <i class="fa-solid fa-tag text-emerald-700"></i> Cetak Label
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * Render Pemulihan Aset & PNBP
+     */
+    function renderRecoveryTable() {
+      const tbody = document.getElementById('recoveryTableBody');
+      const filtered = [];
+
+      registers.forEach(r => {
+        (r.barangBuktiList || []).forEach(b => {
+          const s = b.statusPemulihanAset || r.statusPemulihanAset;
+          if (s === 'DIRAMPAS_LELANG' || s === 'PROSES_LELANG' || s === 'DISETOR_KAS_NEGARA' || (b.nominalPnbp && b.nominalPnbp > 0)) {
+            filtered.push({ ...b, register: r });
+          }
+        });
+      });
+
+      tbody.innerHTML = filtered.map((item, idx) => `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-200">
+          <td class="py-3 px-3 text-center font-bold text-slate-600">${idx + 1}</td>
+          <td class="py-3 px-4 font-mono font-bold text-emerald-800">${item.register.registerBarangBukti}</td>
+          <td class="py-3 px-4 font-bold uppercase text-slate-900">${item.register.namaTersangka}</td>
+          <td class="py-3 px-4">
+            <div class="font-bold text-slate-900">${item.namaBarang}</div>
+            <div class="text-[10px] text-slate-500 font-mono">${item.jenisBarang}</div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-100 text-purple-800 border border-purple-200">
+              ${getStatusPemulihanLabel(item.statusPemulihanAset)}
+            </span>
+          </td>
+          <td class="py-3 px-4 font-mono font-bold text-slate-900">${formatRupiah(item.nominalPnbp)}</td>
+          <td class="py-3 px-4 text-xs italic text-slate-700 max-w-xs">${item.register.amarPutusan || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * Tab Switcher
+     */
+    function switchTab(tab) {
+      currentActiveTab = tab;
+      const tabs = ['register', 'warehouse', 'recovery'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          btn.className = 'px-3.5 py-2 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'px-3.5 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2';
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    /**
+     * =========================================================================
+     * MODAL 1 STIKER UNTUK SELURUH BB DENGAN STATUS PERKARA & PUTUSAN
+     * =========================================================================
+     */
+    function openStickerModal(regId) {
+      const reg = registers.find(r => r.id === regId);
+      if (!reg) return;
+
+      currentViewingRegister = reg;
+      const container = document.getElementById('stickerPrintContainer');
+      const statusPerkaraText = getStatusPerkaraLabel(reg.statusPerkara);
+      const putusanText = reg.amarPutusan || 
+        (reg.statusPerkara === 'PERSIDANGAN' ? 'Dalam Proses Persidangan (Belum Ada Putusan Pengadilan)' : 'Tahap Penuntutan / Pra-Sidang (Belum Ada Putusan)');
+
+      // Barcode Payload
+      const barcodePayload = [
+        'KEJAKSAAN NEGERI MESUJI - SEKSI PAPBB',
+        'LABEL IDENTITAS BARANG BUKTI (STIKER RESMI)',
+        `No. Register BB (RB): ${reg.registerBarangBukti}`,
+        `No. Register Perkara: ${reg.registerPerkara}`,
+        `Surat Perintah Penerimaan: ${reg.suratPenerimaan}`,
+        `Tanggal Penerimaan: ${formatDateIndo(reg.tanggalPenerimaan)}`,
+        `Tersangka: ${reg.namaTersangka}`,
+        `Pasal: ${reg.pasal}`,
+        `Jaksa Penuntut Umum: ${Array.isArray(reg.jaksaPU) ? reg.jaksaPU.join('; ') : reg.jaksaPU}`,
+        `STATUS PENANGANAN PERKARA: ${statusPerkaraText}`,
+        `PUTUSAN PENGADILAN: ${reg.tanggalPutusan ? `[Tgl: ${formatDateIndo(reg.tanggalPutusan)}] ` : ''}${reg.amarPutusan ? reg.amarPutusan.substring(0, 150) : putusanText}`,
+        `TOTAL BARANG BUKTI: ${reg.barangBuktiList.length} Item`,
+        '--- DAFTAR SELURUH BARANG BUKTI ---',
+        ...reg.barangBuktiList.map((b, i) => `${i + 1}. ${b.namaBarang} [${b.jenisBarang}] | Status: ${getStatusPemulihanLabel(b.statusPemulihanAset)} | Lokasi: ${b.lokasiPenyimpanan}`)
+      ].join('\n');
+
+      container.innerHTML = `
+        <!-- KOP RESMI KEJAKSAAN -->
+        <div class="flex items-start justify-between border-b-2 border-slate-900 pb-3 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 bg-white rounded flex items-center justify-center flex-shrink-0">
+              <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="46" fill="#14532D" stroke="#EAB308" stroke-width="4"/>
+                <circle cx="50" cy="50" r="38" fill="#15803D" stroke="#CA8A04" stroke-width="1.5"/>
+                <path d="M50 20 L58 44 L84 44 L63 59 L71 83 L50 68 L29 83 L37 59 L16 44 L42 44 Z" fill="#EAB308"/>
+                <circle cx="50" cy="50" r="14" fill="#047857" stroke="#FEF08A" stroke-width="1.5"/>
+                <path d="M50 38 L50 62 M40 50 L60 50" stroke="#FEF08A" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-700 leading-tight">
+                KEJAKSAAN REPUBLIK INDONESIA • KEJAKSAAN TINGGI LAMPUNG
+              </div>
+              <div class="text-xs font-black uppercase tracking-wider text-slate-900">
+                KEJAKSAAN NEGERI MESUJI
+              </div>
+              <div class="text-[11px] font-bold text-emerald-900 uppercase">
+                SEKSI PEMULIHAN ASET DAN PENGELOLAAN BARANG BUKTI (PAPBB)
+              </div>
+              <h3 class="text-sm sm:text-base font-black tracking-wide text-slate-950 uppercase mt-0.5">
+                LABEL IDENTITAS BARANG BUKTI
+              </h3>
+            </div>
+          </div>
+
+          <div class="text-right flex flex-col items-end gap-1">
+            <div class="inline-flex items-center gap-1.5 bg-slate-900 text-white px-2.5 py-1 rounded text-xs font-mono font-bold">
+              <span>RB:</span>
+              <span>${reg.registerBarangBukti}</span>
+            </div>
+            <div class="text-[10px] text-slate-600 font-semibold">
+              Kode: <span class="font-mono font-bold text-slate-900">${reg.kodePerkara}</span> • Periode: <span class="font-mono text-slate-900">${reg.bulan || '05'}/${reg.tahun || '2026'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRID DATA PERKARA & BARCODE -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+          
+          <div class="sm:col-span-3 space-y-2">
+            <div class="grid grid-cols-3 border-b border-slate-200 pb-1.5">
+              <span class="text-slate-600 font-semibold">No. Register Perkara:</span>
+              <span class="col-span-2 font-mono font-bold text-slate-950 text-sm">${reg.registerPerkara}</span>
+            </div>
+
+            <div class="grid grid-cols-3 border-b border-slate-200 pb-1.5">
+              <span class="text-slate-600 font-semibold">Surat Perintah Penerimaan:</span>
+              <span class="col-span-2 font-mono font-semibold text-slate-900 text-[11px]">${reg.suratPenerimaan}</span>
+            </div>
+
+            <div class="grid grid-cols-3 border-b border-slate-200 pb-1.5">
+              <span class="text-slate-600 font-semibold">Tanggal Penerimaan:</span>
+              <span class="col-span-2 font-bold text-slate-900">${formatDateIndo(reg.tanggalPenerimaan)}</span>
+            </div>
+
+            <div class="grid grid-cols-3 border-b border-slate-200 pb-1.5">
+              <span class="text-slate-600 font-semibold">Nama Tersangka:</span>
+              <span class="col-span-2 font-black text-slate-950 uppercase text-sm">${reg.namaTersangka}</span>
+            </div>
+
+            <div class="grid grid-cols-3 border-b border-slate-200 pb-1.5">
+              <span class="text-slate-600 font-semibold">Pasal / Dakwaan:</span>
+              <span class="col-span-2 text-slate-900 font-medium">${reg.pasal}</span>
+            </div>
+
+            <div class="grid grid-cols-3 border-b border-slate-200 pb-1.5">
+              <span class="text-slate-600 font-semibold">Jaksa Penuntut Umum:</span>
+              <span class="col-span-2 text-slate-900 font-medium text-[11px]">${Array.isArray(reg.jaksaPU) ? reg.jaksaPU.join('; ') : reg.jaksaPU}</span>
+            </div>
+
+            <!-- SECTION STATUS PENANGANAN PERKARA & PUTUSAN PENGADILAN -->
+            <div class="border-2 border-slate-800 bg-slate-50/80 rounded-lg p-2.5 my-2 space-y-2">
+              <div class="grid grid-cols-3 items-center">
+                <span class="text-slate-800 font-bold uppercase text-[11px] flex items-center gap-1.5">
+                  <i class="fa-solid fa-scale-balanced text-slate-700"></i>
+                  <span>Status Penanganan Perkara:</span>
+                </span>
+                <div class="col-span-2">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold uppercase border bg-purple-50 text-purple-800 border-purple-200">
+                    <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+                    <span>${statusPerkaraText}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 items-start pt-1.5 border-t border-slate-300">
+                <span class="text-slate-800 font-bold uppercase text-[11px] flex items-center gap-1.5 pt-0.5">
+                  <i class="fa-solid fa-gavel text-slate-700"></i>
+                  <span>Putusan Pengadilan:</span>
+                </span>
+                <div class="col-span-2 space-y-1">
+                  ${reg.amarPutusan ? `
+                    <div class="bg-white border border-slate-300 rounded p-2 text-xs leading-relaxed text-slate-950 font-medium">
+                      ${reg.tanggalPutusan ? `<div class="text-[10px] font-bold text-slate-600 mb-0.5 uppercase font-mono">Tanggal Putusan: ${formatDateIndo(reg.tanggalPutusan)}</div>` : ''}
+                      <div class="italic text-slate-900 font-serif">"${reg.amarPutusan}"</div>
+                    </div>
+                  ` : `
+                    <div class="text-[11px] text-slate-600 italic bg-white border border-slate-200 rounded px-2 py-1.5">
+                      ${putusanText}
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- KOLOM KANAN: QR BARCODE -->
+          <div class="flex flex-col items-center justify-between border-t sm:border-t-0 sm:border-l-2 border-slate-900 pt-3 sm:pt-0 sm:pl-4">
+            <div class="text-center w-full">
+              <div id="qrcodeStickerContainer" onclick="showScanPreviewFromCurrentLabel()" title="Klik untuk melihat teks hasil scan" class="w-32 h-32 mx-auto bg-white border-2 border-slate-900 rounded p-1 flex items-center justify-center shadow-xs cursor-pointer hover:ring-2 hover:ring-emerald-500 transition"></div>
+              <div class="font-mono text-[10px] font-bold text-slate-950 mt-1.5">${reg.registerBarangBukti}</div>
+              <div class="text-[9px] text-slate-600 font-semibold uppercase tracking-wider">Scan Barcode PAPBB</div>
+              <button type="button" onclick="showScanPreviewFromCurrentLabel()" class="no-print mt-2 text-[10px] text-emerald-700 font-bold underline flex items-center gap-1 mx-auto bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                <i class="fa-solid fa-eye"></i> Pratinjau Teks Scan
+              </button>
+            </div>
+
+            <div class="w-full text-center border-t border-slate-300 pt-2 mt-4 space-y-1">
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Total Barang Bukti</div>
+              <div class="font-bold text-slate-900 text-sm font-mono">${reg.barangBuktiList.length} Item</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- DAFTAR SELURUH BARANG BUKTI (TANPA KOLOM SPESIFIKASI FISIK) -->
+        <div class="mt-4 pt-3 border-t-2 border-slate-900">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-slate-800"></i>
+              <span>Daftar Rincian Seluruh Barang Bukti (${reg.barangBuktiList.length} Item)</span>
+            </h4>
+            <span class="text-[10px] font-bold text-slate-500 italic">Dicatat dalam 1 Stiker Resmi Terpadu</span>
+          </div>
+
+          <div class="border border-slate-800 rounded-lg overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900 text-white text-[11px] uppercase tracking-wider font-bold">
+                <tr>
+                  <th class="py-2 px-2.5 w-8 text-center">No</th>
+                  <th class="py-2 px-3">Nama Barang Bukti &amp; Jenis</th>
+                  <th class="py-2 px-3 w-44">Status Pemulihan Aset</th>
+                  <th class="py-2 px-3 w-40">Lokasi Penyimpanan</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-300 bg-white">
+                ${reg.barangBuktiList.map((item, idx) => `
+                  <tr>
+                    <td class="py-2 px-2.5 text-center font-bold text-slate-900 align-top">${idx + 1}</td>
+                    <td class="py-2 px-3 align-top">
+                      <div class="font-bold text-slate-950">${item.namaBarang}</div>
+                      <div class="text-[10px] font-mono text-slate-600 uppercase font-semibold mt-0.5">Jenis: ${item.jenisBarang}</div>
+                    </td>
+                    <td class="py-2 px-3 align-top">
+                      <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border border-slate-300">
+                        ${getStatusPemulihanLabel(item.statusPemulihanAset)}
+                      </span>
+                    </td>
+                    <td class="py-2 px-3 align-top">
+                      <div class="flex items-center gap-1 font-semibold text-slate-900 text-[11px]">
+                        <i class="fa-solid fa-location-dot text-emerald-700"></i>
+                        <span>${item.lokasiPenyimpanan}</span>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- FOOTER STIKER -->
+        <div class="mt-4 pt-3 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div class="text-[10px] text-slate-600 flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-slate-700"></i>
+            <span class="italic font-medium">
+              <strong>PERHATIAN:</strong> Dilarang merusak, memindahkan, atau menukar barang bukti tanpa izin Kepala Seksi PAPBB Kejaksaan Negeri Mesuji.
+            </span>
+          </div>
+          <div class="text-right text-[10px] text-slate-500 font-mono">
+            Kejaksaan Negeri Mesuji • Seksi PAPBB
+          </div>
+        </div>
+      `;
+
+      // Render QRCode menggunakan QRCode.js
+      setTimeout(() => {
+        const qrEl = document.getElementById('qrcodeStickerContainer');
+        if (qrEl) {
+          qrEl.innerHTML = '';
+          new QRCode(qrEl, {
+            text: barcodePayload,
+            width: 120,
+            height: 120,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L
+          });
+        }
+      }, 50);
+
+      document.getElementById('modalStickerLabel').classList.remove('hidden');
+      document.getElementById('modalStickerLabel').classList.add('flex');
+    }
+
+    function closeStickerModal() {
+      document.getElementById('modalStickerLabel').classList.add('hidden');
+      document.getElementById('modalStickerLabel').classList.remove('flex');
+    }
+
+    function showScanPreviewFromCurrentLabel() {
+      if (!currentViewingRegister) return;
+      const reg = currentViewingRegister;
+      const statusPerkaraText = getStatusPerkaraLabel(reg.statusPerkara);
+      const putusanText = reg.amarPutusan || 
+        (reg.statusPerkara === 'PERSIDANGAN' ? 'Dalam Proses Persidangan (Belum Ada Putusan Pengadilan)' : 'Tahap Penuntutan / Pra-Sidang (Belum Ada Putusan)');
+
+      const barcodePayload = [
+        'KEJAKSAAN NEGERI MESUJI - SEKSI PAPBB',
+        'LABEL IDENTITAS BARANG BUKTI (STIKER RESMI)',
+        `No. Register BB (RB): ${reg.registerBarangBukti}`,
+        `No. Register Perkara: ${reg.registerPerkara}`,
+        `Surat Perintah Penerimaan: ${reg.suratPenerimaan}`,
+        `Tanggal Penerimaan: ${formatDateIndo(reg.tanggalPenerimaan)}`,
+        `Tersangka: ${reg.namaTersangka}`,
+        `Pasal: ${reg.pasal}`,
+        `Jaksa Penuntut Umum: ${Array.isArray(reg.jaksaPU) ? reg.jaksaPU.join('; ') : reg.jaksaPU}`,
+        `STATUS PENANGANAN PERKARA: ${statusPerkaraText}`,
+        `PUTUSAN PENGADILAN: ${reg.tanggalPutusan ? `[Tgl: ${formatDateIndo(reg.tanggalPutusan)}] ` : ''}${reg.amarPutusan ? reg.amarPutusan.substring(0, 150) : putusanText}`,
+        `TOTAL BARANG BUKTI: ${reg.barangBuktiList.length} Item`,
+        '--- DAFTAR SELURUH BARANG BUKTI ---',
+        ...reg.barangBuktiList.map((b, i) => `${i + 1}. ${b.namaBarang} [${b.jenisBarang}] | Status: ${getStatusPemulihanLabel(b.statusPemulihanAset)} | Lokasi: ${b.lokasiPenyimpanan}`)
+      ].join('\n');
+
+      document.getElementById('scanPreviewText').innerText = barcodePayload;
+      document.getElementById('modalScanPreview').classList.remove('hidden');
+      document.getElementById('modalScanPreview').classList.add('flex');
+    }
+
+    function closeScanPreview() {
+      document.getElementById('modalScanPreview').classList.add('hidden');
+      document.getElementById('modalScanPreview').classList.remove('flex');
+    }
+
+    function copyScanText() {
+      const text = document.getElementById('scanPreviewText').innerText;
+      navigator.clipboard.writeText(text);
+      document.getElementById('btnCopyText').innerText = 'Tersalin!';
+      setTimeout(() => {
+        document.getElementById('btnCopyText').innerText = 'Salin Teks';
+      }, 2000);
+    }
+
+    /**
+     * =========================================================================
+     * MODAL FORM INPUT & EDIT
+     * =========================================================================
+     */
+    function openRegisterModal() {
+      document.getElementById('formModalTitle').innerText = 'Input Register Perkara & Barang Bukti Baru';
+      document.getElementById('registerForm').reset();
+      document.getElementById('formRegId').value = '';
+      document.getElementById('formTanggalTerima').value = new Date().toISOString().split('T')[0];
+      
+      const container = document.getElementById('evidenceItemsContainer');
+      container.innerHTML = '';
+      addEvidenceItemFormRow(); // Tambahkan 1 item awal
+
+      document.getElementById('modalRegisterForm').classList.remove('hidden');
+      document.getElementById('modalRegisterForm').classList.add('flex');
+    }
+
+    function openEditRegisterModal(regId) {
+      const reg = registers.find(r => r.id === regId);
+      if (!reg) return;
+
+      document.getElementById('formModalTitle').innerText = 'Edit Register Perkara: ' + reg.registerBarangBukti;
+      document.getElementById('formRegId').value = reg.id;
+      document.getElementById('formKodePerkara').value = reg.kodePerkara || 'EOH';
+      document.getElementById('formNoPerkara').value = reg.registerPerkara || '';
+      document.getElementById('formNoRb').value = reg.registerBarangBukti || '';
+      document.getElementById('formSuratPerintah').value = reg.suratPenerimaan || '';
+      document.getElementById('formTanggalTerima').value = reg.tanggalPenerimaan || '';
+      document.getElementById('formNamaTersangka').value = reg.namaTersangka || '';
+      document.getElementById('formPasal').value = reg.pasal || '';
+      document.getElementById('formJaksaPu').value = Array.isArray(reg.jaksaPU) ? reg.jaksaPU.join('; ') : reg.jaksaPU;
+      document.getElementById('formPenyidik').value = reg.penyidikAsal || '';
+      document.getElementById('formStatusPerkara').value = reg.statusPerkara || 'TAHAP_PENUNTUTAN';
+      document.getElementById('formTanggalPutusan').value = reg.tanggalPutusan || '';
+      document.getElementById('formAmarPutusan').value = reg.amarPutusan || '';
+
+      const container = document.getElementById('evidenceItemsContainer');
+      container.innerHTML = '';
+      if (reg.barangBuktiList && reg.barangBuktiList.length > 0) {
+        reg.barangBuktiList.forEach(item => addEvidenceItemFormRow(item));
+      } else {
+        addEvidenceItemFormRow();
+      }
+
+      document.getElementById('modalRegisterForm').classList.remove('hidden');
+      document.getElementById('modalRegisterForm').classList.add('flex');
+    }
+
+    function closeRegisterFormModal() {
+      document.getElementById('modalRegisterForm').classList.add('hidden');
+      document.getElementById('modalRegisterForm').classList.remove('flex');
+    }
+
+    function addEvidenceItemFormRow(item = null) {
+      const container = document.getElementById('evidenceItemsContainer');
+      const rowId = 'bb-row-' + Math.random().toString(36).substring(2, 8);
+      const div = document.createElement('div');
+      div.id = rowId;
+      div.className = 'p-3 bg-slate-50 border border-slate-300 rounded-lg space-y-2 relative';
+      
+      div.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-[11px] text-slate-800 uppercase">Item Barang Bukti</span>
+          <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-rose-600 hover:text-rose-800 text-xs">
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="sm:col-span-2">
+            <input type="text" placeholder="Nama Barang Bukti (mis: Sepeda Motor Honda CB150R)" value="${item ? (item.namaBarang || '') : ''}" class="item-nama w-full p-1.5 border border-slate-300 rounded font-semibold text-xs" required>
+          </div>
+          <div>
+            <select class="item-jenis w-full p-1.5 border border-slate-300 rounded text-xs">
+              <option value="KENDARAAN" ${item && item.jenisBarang === 'KENDARAAN' ? 'selected' : ''}>KENDARAAN</option>
+              <option value="DOKUMEN" ${item && item.jenisBarang === 'DOKUMEN' ? 'selected' : ''}>DOKUMEN</option>
+              <option value="SENPI_SAJAM" ${item && item.jenisBarang === 'SENPI_SAJAM' ? 'selected' : ''}>SENPI_SAJAM</option>
+              <option value="NARKOTIKA" ${item && item.jenisBarang === 'NARKOTIKA' ? 'selected' : ''}>NARKOTIKA</option>
+              <option value="ELEKTRONIK" ${item && item.jenisBarang === 'ELEKTRONIK' ? 'selected' : ''}>ELEKTRONIK</option>
+              <option value="UANG_PERHIASAN" ${item && item.jenisBarang === 'UANG_PERHIASAN' ? 'selected' : ''}>UANG_PERHIASAN</option>
+              <option value="LAINNYA" ${item && item.jenisBarang === 'LAINNYA' ? 'selected' : ''}>LAINNYA</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <input type="text" placeholder="Lokasi Penyimpanan (mis: Gudang BB)" value="${item ? (item.lokasiPenyimpanan || 'Gudang BB') : 'Gudang BB'}" class="item-lokasi w-full p-1.5 border border-slate-300 rounded text-xs">
+          </div>
+          <div>
+            <select class="item-status-aset w-full p-1.5 border border-slate-300 rounded text-xs">
+              <option value="TAHAP_SITA" ${item && item.statusPemulihanAset === 'TAHAP_SITA' ? 'selected' : ''}>Tahap Sita</option>
+              <option value="DIRAMPAS_LELANG" ${item && item.statusPemulihanAset === 'DIRAMPAS_LELANG' ? 'selected' : ''}>Dirampas Lelang</option>
+              <option value="DIKEMBALIKAN" ${item && item.statusPemulihanAset === 'DIKEMBALIKAN' ? 'selected' : ''}>Dikembalikan</option>
+              <option value="DIMUSNAHKAN" ${item && item.statusPemulihanAset === 'DIMUSNAHKAN' ? 'selected' : ''}>Dimusnahkan</option>
+              <option value="DISETOR_KAS_NEGARA" ${item && item.statusPemulihanAset === 'DISETOR_KAS_NEGARA' ? 'selected' : ''}>Disetor Kas Negara</option>
+            </select>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+    }
+
+    /**
+     * Submit Simpan Register (Sinkron ke Google Sheets jika via GAS)
+     */
+    function saveRegisterSubmit(e) {
+      e.preventDefault();
+      const regId = document.getElementById('formRegId').value || ('reg-' + Date.now());
+      const jaksaRaw = document.getElementById('formJaksaPu').value;
+      const jaksaList = jaksaRaw.split(';').map(j => j.trim()).filter(Boolean);
+      const tglTerima = document.getElementById('formTanggalTerima').value;
+
+      // Kumpulkan item barang bukti
+      const itemElements = document.querySelectorAll('#evidenceItemsContainer > div');
+      const items = [];
+      itemElements.forEach((el, idx) => {
+        const nama = el.querySelector('.item-nama').value.trim();
+        if (nama) {
+          items.push({
+            id: 'bb-' + Date.now() + '-' + idx,
+            namaBarang: nama,
+            jenisBarang: el.querySelector('.item-jenis').value,
+            lokasiPenyimpanan: el.querySelector('.item-lokasi').value || 'Gudang BB',
+            statusPemulihanAset: el.querySelector('.item-status-aset').value || 'TAHAP_SITA',
+            nominalPnbp: 0
+          });
+        }
+      });
+
+      const newRegister = {
+        id: regId,
+        kodePerkara: document.getElementById('formKodePerkara').value.toUpperCase(),
+        registerPerkara: document.getElementById('formNoPerkara').value,
+        registerBarangBukti: document.getElementById('formNoRb').value,
+        suratPenerimaan: document.getElementById('formSuratPerintah').value,
+        tanggalPenerimaan: tglTerima,
+        bulan: tglTerima ? tglTerima.split('-')[1] : '05',
+        tahun: tglTerima ? tglTerima.split('-')[0] : '2026',
+        penyidikAsal: document.getElementById('formPenyidik').value,
+        jaksaPU: jaksaList,
+        namaTersangka: document.getElementById('formNamaTersangka').value.toUpperCase(),
+        pasal: document.getElementById('formPasal').value,
+        statusPerkara: document.getElementById('formStatusPerkara').value,
+        statusPemulihanAset: items.length > 0 ? items[0].statusPemulihanAset : 'TAHAP_SITA',
+        amarPutusan: document.getElementById('formAmarPutusan').value,
+        tanggalPutusan: document.getElementById('formTanggalPutusan').value,
+        barangBuktiList: items
+      };
+
+      // Simpan lokal
+      const existingIdx = registers.findIndex(r => r.id === regId);
+      if (existingIdx >= 0) {
+        registers[existingIdx] = newRegister;
+      } else {
+        registers.unshift(newRegister);
+      }
+      saveToLocalStorage();
+      updateAllViews();
+      closeRegisterFormModal();
+
+      // Sinkron ke Google Apps Script Spreadsheet jika aktif
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        document.getElementById('gasStatusText').innerText = 'Menyimpan ke Sheets...';
+        google.script.run
+          .withSuccessHandler((res) => {
+            document.getElementById('gasStatusText').innerText = 'Tersimpan di Google Sheets!';
+            setTimeout(() => {
+              document.getElementById('gasStatusText').innerText = 'Google Sheets Aktif';
+            }, 3000);
+          })
+          .withFailureHandler((err) => {
+            alert('Peringatan: Berhasil disimpan lokal, tetapi gagal sinkron ke Google Sheets: ' + err);
+          })
+          .saveRegister(newRegister);
+      } else {
+        alert('Berhasil disimpan ke database!');
+      }
+    }
+
+    /**
+     * Hapus Register Perkara
+     */
+    function deleteRegisterAction(regId) {
+      if (!confirm('Apakah Anda yakin ingin menghapus data register perkara ini beserta seluruh barang buktinya?')) {
+        return;
+      }
+
+      registers = registers.filter(r => r.id !== regId);
+      saveToLocalStorage();
+      updateAllViews();
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            document.getElementById('gasStatusText').innerText = 'Dihapus dari Google Sheets!';
+            setTimeout(() => {
+              document.getElementById('gasStatusText').innerText = 'Google Sheets Aktif';
+            }, 3000);
+          })
+          .deleteRegister(regId);
+      }
+    }
+  </script>
+</body>
+</html>

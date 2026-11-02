@@ -1,0 +1,8 @@
+{
+  "name": "Sistem Digital Register Barang Bukti",
+  "description": "Seksi Pemulihan Aset dan Pengelolaan Barang Bukti (Seksi PAPBB) Kejaksaan Negeri Mesuji",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
